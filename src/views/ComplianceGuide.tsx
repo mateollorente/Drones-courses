@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Language } from '../App';
+import { useLanguage } from '../context/LanguageContext';
 
-interface ComplianceGuideProps {
-  language: Language;
-}
+const ComplianceGuide: React.FC = () => {
+  const { language } = useLanguage();
 
-const ComplianceGuide: React.FC<ComplianceGuideProps> = ({ language }) => {
   const translations = {
     es: {
       title: 'Master the Skies Legally',
@@ -71,10 +68,10 @@ const ComplianceGuide: React.FC<ComplianceGuideProps> = ({ language }) => {
       <div className="max-w-6xl mx-auto px-8 py-16 grid lg:grid-cols-[1fr_340px] gap-12">
         <div className="space-y-12">
           <h2 className="text-3xl font-bold dark:text-white">{t.stepTitle}</h2>
-          
+
           <div className="space-y-8 relative">
             <div className="absolute left-[27px] top-4 bottom-4 w-px bg-border-dark" />
-            
+
             {[
               { id: '01', title: t.step1, tag: t.step1Tag, icon: 'app_registration', desc: 'Sistema para el registro de aeronaves no tripuladas.' },
               { id: '02', title: t.step2, tag: t.step2Tag, icon: 'flight_takeoff', desc: 'Utilizado para solicitar acceso al espacio aéreo.' },

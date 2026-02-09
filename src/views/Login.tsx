@@ -1,16 +1,13 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Language } from '../App';
 import { db } from '../utils/db';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
-interface LoginProps {
-  onLogin: () => void;
-  language: Language;
-}
-
-const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
+const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const { language } = useLanguage();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
@@ -47,9 +44,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const result = db.login(formData.email, formData.password);
-    
+
     if (result.success) {
-      onLogin();
+      login();
       navigate('/dashboard');
     } else {
       setError(t.error);
@@ -58,9 +55,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
 
   return (
     <div className="flex min-h-screen w-full bg-background-light dark:bg-background-dark relative">
-        
-       {/* Logo / Home Button */}
-       <div className="absolute top-6 left-6 z-50">
+
+      {/* Logo / Home Button */}
+      <div className="absolute top-6 left-6 z-50">
         <Link to="/" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
           <span className="material-symbols-outlined text-3xl">flight_takeoff</span>
           <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">AeroVision</span>
@@ -70,9 +67,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
       {/* Left Side - Image */}
       <div className="hidden w-1/2 lg:block relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/20 mix-blend-multiply z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1473960104312-30238805f884?auto=format&fit=crop&q=80&w=1600" 
-          alt="Drone Controller" 
+        <img
+          src="https://images.unsplash.com/photo-1473960104312-30238805f884?auto=format&fit=crop&q=80&w=1600"
+          alt="Drone Controller"
           className="h-full w-full object-cover"
         />
         <div className="absolute bottom-12 left-12 z-20 max-w-lg">
@@ -93,16 +90,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm font-bold text-center">
-                    {error}
-                </div>
+              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm font-bold text-center">
+                {error}
+              </div>
             )}
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">{t.email}</label>
-                <input 
+                <input
                   name="email"
-                  type="email" 
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-[#393028] dark:bg-[#221910] dark:text-white"
@@ -112,9 +109,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">{t.password}</label>
-                <input 
+                <input
                   name="password"
-                  type="password" 
+                  type="password"
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-[#393028] dark:bg-[#221910] dark:text-white"
@@ -124,8 +121,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, language }) => {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full rounded-xl bg-primary py-4 text-lg font-bold text-[#181411] shadow-lg transition-transform hover:scale-[1.02] hover:bg-[#ff9529]"
             >
               {t.btn}

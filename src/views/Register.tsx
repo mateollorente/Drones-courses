@@ -1,16 +1,13 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Language } from '../App';
 import { db } from '../utils/db';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
-interface RegisterProps {
-  onLogin: () => void;
-  language: Language;
-}
-
-const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const { language } = useLanguage();
   const [formData, setFormData] = useState({ name: '', email: '', password: '', dni: '' });
   const [error, setError] = useState('');
 
@@ -52,12 +49,12 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const result = db.register(formData);
 
     if (result.success) {
       // Auto login after register
-      onLogin();
+      login();
       navigate('/dashboard');
     } else {
       if (result.message === 'email_exists' || result.message === 'dni_exists') {
@@ -70,7 +67,7 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
 
   return (
     <div className="flex min-h-screen w-full bg-background-light dark:bg-background-dark relative">
-      
+
       {/* Logo / Home Button */}
       <div className="absolute top-6 left-6 z-50">
         <Link to="/" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
@@ -82,9 +79,9 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
       {/* Left Side - Image */}
       <div className="hidden w-1/2 lg:block relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/20 mix-blend-multiply z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=1600" 
-          alt="Drone Pilot" 
+        <img
+          src="https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=1600"
+          alt="Drone Pilot"
           className="h-full w-full object-cover"
         />
         <div className="absolute bottom-12 left-12 z-20 max-w-lg">
@@ -105,16 +102,16 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm font-bold text-center">
-                    {error}
-                </div>
+              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm font-bold text-center">
+                {error}
+              </div>
             )}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-1">{t.name}</label>
-                <input 
+                <input
                   name="name"
-                  type="text" 
+                  type="text"
                   value={formData.name}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-[#393028] dark:bg-[#221910] dark:text-white"
@@ -122,12 +119,12 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-1">{t.dni}</label>
-                <input 
+                <input
                   name="dni"
-                  type="text" 
+                  type="text"
                   value={formData.dni}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-[#393028] dark:bg-[#221910] dark:text-white"
@@ -138,9 +135,9 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-1">{t.email}</label>
-                <input 
+                <input
                   name="email"
-                  type="email" 
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-[#393028] dark:bg-[#221910] dark:text-white"
@@ -150,9 +147,9 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-1">{t.password}</label>
-                <input 
+                <input
                   name="password"
-                  type="password" 
+                  type="password"
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-[#393028] dark:bg-[#221910] dark:text-white"
@@ -162,8 +159,8 @@ const Register: React.FC<RegisterProps> = ({ onLogin, language }) => {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full rounded-xl bg-primary py-4 text-lg font-bold text-[#181411] shadow-lg transition-transform hover:scale-[1.02] hover:bg-[#ff9529]"
             >
               {t.btn}
