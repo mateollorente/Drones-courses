@@ -1,0 +1,9 @@
+{
+  "name": "Drone Pilot Platform",
+  "description": "A comprehensive platform for drone pilots featuring student and instructor dashboards, regulatory guides, and a high-fidelity flight simulator interface.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
