@@ -43,7 +43,7 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
@@ -54,6 +54,7 @@ const App: React.FC = () => {
         <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
 
         <Route element={<Layout />}>
+          <Route path="/" element={<LandingPage />} />
           <Route
             path="/dashboard"
             element={

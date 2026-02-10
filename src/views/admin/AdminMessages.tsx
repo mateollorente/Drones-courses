@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, Message } from '../../utils/db';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ConversationList from '../../components/admin/ConversationList';
 import ChatWindow from '../../components/admin/ChatWindow';
@@ -50,16 +51,22 @@ const AdminMessages: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark overflow-hidden">
+        <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark">
             {/* Reuse Navbar for consistent admin experience */}
             {/* Ideally this should be in a shared AdminLayout, but importing Navbar here works for now */}
             <div className="flex-none">
-                {/* Check if we can import Navbar or just a simple header */}
+                <Navbar />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+                    <Link to="/admin" className="inline-flex items-center text-sm text-gray-500 hover:text-primary transition-colors">
+                        <span className="material-symbols-outlined text-lg mr-1">arrow_back</span>
+                        Volver al Panel
+                    </Link>
+                </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-4 lg:p-6 overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+            <div className="flex-1 p-4 lg:p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)] min-h-[600px]">
                     {/* Conversation List */}
                     <div className={`lg:col-span-1 h-full flex flex-col ${selectedEmail ? 'hidden lg:flex' : 'flex'}`}>
                         <ConversationList
@@ -75,17 +82,19 @@ const AdminMessages: React.FC = () => {
                         {selectedEmail && (
                             <button
                                 onClick={() => setSelectedEmail(null)}
-                                className="lg:hidden mb-2 flex items-center gap-2 text-gray-500 flex-none"
+                                className="lg:hidden mb-4 flex items-center gap-2 text-gray-500 flex-none"
                             >
                                 <span className="material-symbols-outlined">arrow_back</span> Atrás
                             </button>
                         )}
-                        <ChatWindow
-                            selectedEmail={selectedEmail}
-                            messages={messages}
-                            currentUser={user || null}
-                            onSend={handleSend}
-                        />
+                        <div className="flex-1 min-h-0">
+                            <ChatWindow
+                                selectedEmail={selectedEmail}
+                                messages={messages}
+                                currentUser={user || null}
+                                onSend={handleSend}
+                            />
+                        </div>
                     </div>
 
                     {/* Student Details */}

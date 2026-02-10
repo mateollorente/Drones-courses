@@ -6,7 +6,7 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { user } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const adminEmail = 'admin@aerovision.com';
 
     // Load messages
@@ -21,12 +21,14 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     useEffect(() => {
         loadMessages();
         // Poll for new messages every 1 second for better responsiveness
-        const interval = setInterval(loadMessages, 1000);
-        return () => clearInterval(interval);
+        const unsubscribe = db.subscribe(loadMessages);
+        return () => unsubscribe();
     }, [user]);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
     };
 
     useEffect(() => {
@@ -43,7 +45,7 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed bottom-20 right-4 w-80 md:w-96 bg-white dark:bg-[#1e1a16] border border-gray-200 dark:border-[#393028] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300 z-50 h-[500px]">
+        <div className="fixed bottom-20 right-4 w-80 md:w-96 bg-white dark:bg-[#1e1a16] border border-gray-200 dark:border-[#393028] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300 z-50 h-[500px] max-h-[80vh]">
             {/* Header */}
             <div className="p-4 bg-primary text-black font-bold flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -58,7 +60,7 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-[#0d0a08]">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-[#0d0a08]">
                 {messages.length === 0 && (
                     <div className="text-center text-gray-500 text-sm mt-10">
                         <p>¡Hola! Soy tu instructor.</p>
@@ -79,7 +81,6 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}

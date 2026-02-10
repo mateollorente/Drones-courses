@@ -19,8 +19,8 @@ const UnreadBadge = () => {
       setCount(unread);
     };
     check();
-    const interval = setInterval(check, 2000);
-    return () => clearInterval(interval);
+    const unsubscribe = db.subscribe(check);
+    return () => unsubscribe();
   }, [user]);
 
   if (count === 0) return null;

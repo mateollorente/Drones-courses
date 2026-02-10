@@ -74,6 +74,20 @@ export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
+// --- REAL-TIME MOCK (Observer Pattern) ---
+const listeners = new Set<() => void>();
+
+const notifyListeners = () => {
+  listeners.forEach(cb => cb());
+};
+
+// Listen for changes in other tabs
+window.addEventListener('storage', (e) => {
+  if (e.key === 'aerovision_messages' || e.key === 'aerovision_users') {
+    notifyListeners();
+  }
+});
+
 // Initial Mock Data
 const INITIAL_ADMIN: User = {
   name: 'Admin User',
@@ -458,6 +472,7 @@ export const db = {
 
     allMessages.push(newMessage);
     localStorage.setItem(DB_MESSAGES_KEY, JSON.stringify(allMessages));
+    notifyListeners();
     return newMessage;
   },
 
@@ -478,6 +493,14 @@ export const db = {
 
     if (changed) {
       localStorage.setItem(DB_MESSAGES_KEY, JSON.stringify(allMessages));
+      notifyListeners();
     }
+  },
+
+  // --- REAL-TIME MOCK (Observer Pattern) ---
+  subscribe: (callback: () => void): (() => void) => {
+    listeners.add(callback);
+    return () => { listeners.delete(callback); }; // explicit return block for clarity
   }
 };
+

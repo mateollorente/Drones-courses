@@ -10,12 +10,13 @@ interface ChatWindowProps {
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ selectedEmail, messages, currentUser, onSend }) => {
     const [reply, setReply] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Scroll to bottom only on mount or if new message added
-        // Simple check: if last message changed, scroll.
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
     }, [messages.length, messages[messages.length - 1]?.id]);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -40,7 +41,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedEmail, messages, curren
                 <h2 className="font-bold dark:text-white">Chat con {selectedEmail}</h2>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-100 dark:bg-[#0d0a08]">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-100 dark:bg-[#0d0a08]">
                 {messages.map(msg => {
                     const isMe = msg.fromEmail === currentUser?.email;
                     return (
@@ -57,7 +58,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedEmail, messages, curren
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} />
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-[#393028] bg-white dark:bg-[#1e1a16] flex gap-2">
