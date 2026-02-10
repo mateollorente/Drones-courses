@@ -1,51 +1,118 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-
-// --- Mock Data Structure for the Course ---
-const courseData = {
-  title: "Fundamentos de Operaciones de Vuelo",
-  modules: [
-    {
-      title: "Módulo 1: Seguridad y Normativa",
-      lessons: [
-        { id: 1, title: "Introducción a la Seguridad Aérea", type: "theory" },
-        { id: 2, title: "Check-list Pre-vuelo", type: "quiz" },
-        { id: 3, title: "Zonas de Restricción (CTR)", type: "theory" }
-      ]
-    },
-    {
-      title: "Módulo 2: Meteorología Básica",
-      lessons: [
-        { id: 4, title: "Lectura de METAR", type: "theory" },
-        { id: 5, title: "Viento y Turbulencia", type: "quiz" }
-      ]
-    }
-  ]
-};
+import { useAuth } from '../context/AuthContext';
+import { db, Course, UserProgress } from '../utils/db';
+import ChatWidget from '../components/ChatWidget';
 
 const CourseLearning: React.FC = () => {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const courseId = searchParams.get('courseId');
+
+  const [course, setCourse] = useState<Course | null>(null);
   const [currentModuleIdx, setCurrentModuleIdx] = useState(0);
   const [currentLessonIdx, setCurrentLessonIdx] = useState(0);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [quizSelected, setQuizSelected] = useState<string | null>(null);
   const [quizResult, setQuizResult] = useState<'correct' | 'incorrect' | null>(null);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
-  const currentModule = courseData.modules[currentModuleIdx];
-  const currentLesson = currentModule.lessons[currentLessonIdx];
+  useEffect(() => {
+    if (courseId && user) {
+      // Check enrollment first
+      if (!db.isEnrolled(user.email, courseId)) {
+        navigate('/dashboard');
+        return;
+      }
+
+      const foundCourse = db.getCourseById(courseId);
+      if (foundCourse) {
+        setCourse(foundCourse);
+        // Restore progress
+        const progress = db.getProgress(user.email, courseId);
+        if (progress) {
+          setCurrentModuleIdx(progress.currentModuleIdx);
+          setCurrentLessonIdx(progress.currentLessonIdx);
+          setCompletedLessons(progress.completedLessons || []);
+        }
+      }
+    }
+  }, [courseId, user, navigate]);
+
+  const saveProgress = (modIdx: number, lessIdx: number, newCompleted?: string[]) => {
+    if (user && courseId) {
+      const finalCompleted = newCompleted || completedLessons;
+      const newProgress: UserProgress = {
+        courseId,
+        currentModuleIdx: modIdx,
+        currentLessonIdx: lessIdx,
+        completedLessons: finalCompleted,
+        lastAccessed: Date.now()
+      };
+      db.saveProgress(user.email, newProgress);
+    }
+  };
+
+  const markLessonAsCompleted = (lessonId: string): string[] => {
+    if (!completedLessons.includes(lessonId)) {
+      const newCompleted = [...completedLessons, lessonId];
+      setCompletedLessons(newCompleted);
+
+      // Check for completion
+      if (course) {
+        const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);
+        if (newCompleted.length === totalLessons) {
+          setShowCongrats(true);
+        }
+      }
+      return newCompleted;
+    }
+    return completedLessons;
+  };
+
+  if (!course) {
+    return (
+      <div className="flex h-screen items-center justify-center dark:text-white">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Cargando curso...</h2>
+          <p>Si esto tarda demasiado, el curso podría no existir.</p>
+          <Link to="/dashboard" className="text-primary hover:underline mt-4 block">Volver al Panel</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const currentModule = course.modules[currentModuleIdx];
+  const currentLesson = currentModule?.lessons[currentLessonIdx];
+
+  if (!currentLesson) return <div>Error: Lección no encontrada</div>;
 
   const handleNext = () => {
-    // Reset quiz state
+    let currentCompletedLessons = completedLessons;
+
+    // Mark current as completed before moving
+    if (currentLesson) {
+      currentCompletedLessons = markLessonAsCompleted(currentLesson.id);
+    }
+
     setQuizSelected(null);
     setQuizResult(null);
 
-    // Logic to move to next lesson or module
     if (currentLessonIdx < currentModule.lessons.length - 1) {
       setCurrentLessonIdx(currentLessonIdx + 1);
-    } else if (currentModuleIdx < courseData.modules.length - 1) {
+      saveProgress(currentModuleIdx, currentLessonIdx + 1, currentCompletedLessons);
+    } else if (currentModuleIdx < course.modules.length - 1) {
       setCurrentModuleIdx(currentModuleIdx + 1);
       setCurrentLessonIdx(0);
+      saveProgress(currentModuleIdx + 1, 0, currentCompletedLessons);
+    } else {
+      // Last lesson of last module
+      saveProgress(currentModuleIdx, currentLessonIdx, currentCompletedLessons);
     }
   };
 
@@ -54,51 +121,55 @@ const CourseLearning: React.FC = () => {
     setQuizResult(null);
     if (currentLessonIdx > 0) {
       setCurrentLessonIdx(currentLessonIdx - 1);
+      saveProgress(currentModuleIdx, currentLessonIdx - 1);
     } else if (currentModuleIdx > 0) {
       setCurrentModuleIdx(currentModuleIdx - 1);
-      setCurrentLessonIdx(courseData.modules[currentModuleIdx - 1].lessons.length - 1);
+      const prevModLessons = course.modules[currentModuleIdx - 1].lessons;
+      const newLessonIdx = prevModLessons.length - 1;
+      setCurrentLessonIdx(newLessonIdx);
+      saveProgress(currentModuleIdx - 1, newLessonIdx);
     }
   };
 
   const checkAnswer = () => {
-    if (quizSelected === 'correct') {
+    if (!currentLesson.quizData) return;
+
+    const selectedOption = currentLesson.quizData.options.find(o => o.id === quizSelected);
+
+    if (selectedOption?.isCorrect) {
       setQuizResult('correct');
+      const newCompleted = markLessonAsCompleted(currentLesson.id);
+      saveProgress(currentModuleIdx, currentLessonIdx, newCompleted);
     } else {
       setQuizResult('incorrect');
     }
   };
 
-  // --- Render Content Based on Lesson Type ---
   const renderContent = () => {
-    // Example: Lesson 2 is a Quiz
-    if (currentLesson.type === 'quiz') {
+    if (currentLesson.type === 'quiz' && currentLesson.quizData) {
       return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-[#393028] p-8 rounded-2xl shadow-sm">
-            <h2 className="text-2xl font-bold mb-4 dark:text-white">Desafío: Lista de Verificación</h2>
+            <h2 className="text-2xl font-bold mb-4 dark:text-white">Desafío: {currentLesson.title}</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
-              Antes de encender los motores, detectas que una de las hélices tiene una pequeña grieta en el borde de ataque. ¿Cuál es la acción correcta?
+              {currentLesson.quizData.question}
             </p>
 
             <div className="space-y-3">
-              {[
-                { id: 'opt1', text: 'Lijar la grieta y proceder con el vuelo.', val: 'incorrect' },
-                { id: 'opt2', text: 'Aplicar cinta aislante para reforzar la zona.', val: 'incorrect' },
-                { id: 'opt3', text: 'Cancelar el vuelo y reemplazar la hélice.', val: 'correct' } // Correct
-              ].map((opt) => (
+              {currentLesson.quizData.options.map((opt) => (
                 <label
                   key={opt.id}
-                  className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${quizSelected === opt.val
-                      ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-[#393028] hover:bg-gray-50 dark:hover:bg-[#322a24]'
+                  className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${quizSelected === opt.id
+                    ? 'border-primary bg-primary/10'
+                    : 'border-gray-200 dark:border-[#393028] hover:bg-gray-50 dark:hover:bg-[#322a24]'
                     }`}
                 >
                   <input
                     type="radio"
                     name="quiz"
                     className="h-5 w-5 text-primary focus:ring-primary border-gray-300 bg-transparent"
-                    onChange={() => { setQuizSelected(opt.val); setQuizResult(null); }}
-                    checked={quizSelected === opt.val}
+                    onChange={() => { setQuizSelected(opt.id); setQuizResult(null); }}
+                    checked={quizSelected === opt.id}
                   />
                   <span className="ml-3 font-medium text-slate-700 dark:text-gray-200">{opt.text}</span>
                 </label>
@@ -110,8 +181,8 @@ const CourseLearning: React.FC = () => {
                 onClick={checkAnswer}
                 disabled={!quizSelected}
                 className={`w-full py-3 rounded-xl font-bold text-lg transition-all ${!quizSelected
-                    ? 'bg-gray-300 dark:bg-[#393028] text-gray-500 cursor-not-allowed'
-                    : 'bg-primary text-[#181411] hover:bg-[#ff9529] shadow-lg'
+                  ? 'bg-gray-300 dark:bg-[#393028] text-gray-500 cursor-not-allowed'
+                  : 'bg-primary text-[#181411] hover:bg-[#ff9529] shadow-lg'
                   }`}
               >
                 Comprobar Respuesta
@@ -119,12 +190,12 @@ const CourseLearning: React.FC = () => {
 
               {quizResult === 'correct' && (
                 <div className="mt-4 p-4 bg-green-500/20 border border-green-500/50 text-green-600 dark:text-green-400 rounded-xl text-center font-bold animate-pulse">
-                  ¡Correcto! La seguridad es lo primero.
+                  ¡Correcto! Bien hecho.
                 </div>
               )}
               {quizResult === 'incorrect' && (
                 <div className="mt-4 p-4 bg-red-500/20 border border-red-500/50 text-red-600 dark:text-red-400 rounded-xl text-center font-bold">
-                  Incorrecto. Nunca se debe volar con hélices dañadas.
+                  Incorrecto. Inténtalo de nuevo.
                 </div>
               )}
             </div>
@@ -134,36 +205,49 @@ const CourseLearning: React.FC = () => {
     }
 
     // Default: Theory Content
+    const blocks = currentLesson.blocks || (currentLesson.content ? [{ id: 'legacy', type: 'text', content: currentLesson.content }] : []);
+
     return (
-      <div className="prose dark:prose-invert max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <h1 className="text-3xl font-black mb-6 text-slate-900 dark:text-white">{currentLesson.title}</h1>
-        <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-300 mb-6">
-          La seguridad aérea no es solo una normativa, es una mentalidad. Como piloto de drones (RPAS), eres responsable no solo de tu aeronave, sino del espacio aéreo que compartes y de las personas en tierra.
-        </p>
-
-        <div className="my-8 p-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-r-xl">
-          <h3 className="text-blue-700 dark:text-blue-300 font-bold text-lg mb-2">Concepto Clave: VLOS</h3>
-          <p className="text-blue-800 dark:text-blue-200">
-            <strong>Visual Line of Sight:</strong> Debes mantener el dron siempre dentro de tu campo visual directo, sin ayudas instrumentales (salvo gafas graduadas), para poder evitar colisiones.
-          </p>
+      <div className="prose dark:prose-invert max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+        <div>
+          <h1 className="text-3xl font-black mb-2 text-slate-900 dark:text-white">{currentLesson.title}</h1>
         </div>
 
-        <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-300 mb-6">
-          Antes de cada operación, debemos evaluar tres factores críticos:
-        </p>
-        <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-300 mb-8">
-          <li><strong>Entorno:</strong> Obstáculos, personas, interferencias electromagnéticas.</li>
-          <li><strong>Aeronave:</strong> Estado de baterías, hélices y sensores.</li>
-          <li><strong>Factor Humano:</strong> Fatiga, estrés o presión por completar el trabajo.</li>
-        </ul>
-
-        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-[#1e1a16] border border-gray-200 dark:border-[#393028] flex items-center justify-center relative group cursor-pointer">
-          <img src="https://images.unsplash.com/photo-1506947411487-a56738267384?auto=format&fit=crop&q=80&w=1200" alt="Video cover" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
-          <div className="z-10 h-16 w-16 bg-primary rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-black text-3xl">play_arrow</span>
-          </div>
-          <span className="absolute bottom-4 right-4 bg-black/70 px-2 py-1 rounded text-xs font-bold text-white">05:24</span>
-        </div>
+        {blocks.map((block: any) => {
+          if (block.type === 'text') {
+            return (
+              <div key={block.id} className="whitespace-pre-wrap text-lg leading-relaxed text-gray-600 dark:text-gray-300 font-sans">
+                {block.content}
+              </div>
+            );
+          }
+          if (block.type === 'image') {
+            return (
+              <div key={block.id} className="my-6">
+                <img src={block.content} alt="" className="rounded-xl w-full border border-gray-200 dark:border-[#393028] shadow-sm" />
+              </div>
+            );
+          }
+          if (block.type === 'video') {
+            return (
+              <div key={block.id} className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-gray-200 dark:border-[#393028] relative group my-6">
+                {block.content ? (
+                  <iframe
+                    src={block.content}
+                    className="w-full h-full"
+                    title="Lesson Component"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">Video no disponible</div>
+                )}
+              </div>
+            );
+          }
+          return null;
+        })}
       </div>
     );
   };
@@ -177,34 +261,33 @@ const CourseLearning: React.FC = () => {
           } flex-shrink-0 bg-white dark:bg-[#0d0a08] border-r border-gray-200 dark:border-[#393028] transition-all duration-300 overflow-y-auto relative`}
       >
         <div className="p-6 sticky top-0 bg-white dark:bg-[#0d0a08] z-10 border-b border-gray-100 dark:border-[#393028]">
-          <h2 className="font-bold text-lg dark:text-white leading-tight">{courseData.title}</h2>
+          <h2 className="font-bold text-lg dark:text-white leading-tight">{course.title}</h2>
           <div className="mt-2 w-full bg-gray-200 dark:bg-[#221910] h-2 rounded-full overflow-hidden">
             <div className="bg-primary h-full w-[35%]"></div>
           </div>
-          <p className="text-xs text-gray-500 mt-1">35% Completado</p>
+          <p className="text-xs text-gray-500 mt-1">Progreso Guardado</p>
         </div>
 
         <div className="p-4 space-y-4">
-          {courseData.modules.map((module, modIdx) => (
-            <div key={modIdx} className="space-y-2">
+          {course.modules.map((module, modIdx) => (
+            <div key={module.id} className="space-y-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-2">{module.title}</h3>
               <div className="space-y-1">
                 {module.lessons.map((lesson, lessIdx) => {
                   const isActive = modIdx === currentModuleIdx && lessIdx === currentLessonIdx;
-                  // Mock logic for "completed" - simply previous lessons
-                  const isCompleted = modIdx < currentModuleIdx || (modIdx === currentModuleIdx && lessIdx < currentLessonIdx);
+                  const isCompleted = completedLessons.includes(lesson.id);
 
                   return (
                     <button
                       key={lesson.id}
-                      onClick={() => { setCurrentModuleIdx(modIdx); setCurrentLessonIdx(lessIdx); setQuizResult(null); setQuizSelected(null); }}
+                      onClick={() => { setCurrentModuleIdx(modIdx); setCurrentLessonIdx(lessIdx); setQuizResult(null); setQuizSelected(null); saveProgress(modIdx, lessIdx); }}
                       className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${isActive
-                          ? 'bg-primary/10 text-primary border border-primary/20'
-                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1e1a16]'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1e1a16]'
                         }`}
                     >
                       <div className={`h-5 w-5 rounded-full flex items-center justify-center border ${isCompleted ? 'bg-green-500 border-green-500' :
-                          isActive ? 'border-primary' : 'border-gray-400'
+                        isActive ? 'border-primary' : 'border-gray-400'
                         }`}>
                         {isCompleted && <span className="material-symbols-outlined text-white text-[14px] font-bold">check</span>}
                         {isActive && !isCompleted && <div className="h-2 w-2 bg-primary rounded-full" />}
@@ -240,13 +323,19 @@ const CourseLearning: React.FC = () => {
             <nav className="hidden sm:flex text-sm text-gray-500 dark:text-gray-400 items-center gap-2">
               <Link to="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
               <span>/</span>
-              <span className="truncate max-w-[200px]">{courseData.title}</span>
+              <span className="truncate max-w-[200px]">{course.title}</span>
             </nav>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#393028] text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e1a16] transition-colors">
-              <span className="material-symbols-outlined text-[18px]">help</span>
-              <span className="hidden sm:inline">Ayuda</span>
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold transition-colors ${showChat
+                ? 'bg-primary text-black border-primary'
+                : 'border-gray-200 dark:border-[#393028] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e1a16]'
+                }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">support_agent</span>
+              <span className="hidden sm:inline">Instructor</span>
             </button>
           </div>
         </div>
@@ -277,7 +366,49 @@ const CourseLearning: React.FC = () => {
         </div>
 
       </main>
-    </div>
+
+      {/* Congrats Modal */}
+      {
+        showCongrats && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
+            <div className="bg-white dark:bg-[#1e1a16] max-w-lg w-full rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-yellow-400 to-primary animate-pulse"></div>
+
+              <div className="mb-6 inline-flex items-center justify-center h-24 w-24 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 mb-6">
+                <span className="material-symbols-outlined text-6xl">emoji_events</span>
+              </div>
+
+              <h2 className="text-3xl font-black mb-2 text-slate-900 dark:text-white">¡FELICIDADES!</h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-6">
+                Has completado el curso <br />
+                <span className="text-primary font-bold">{course.title}</span>
+              </p>
+
+              <div className="bg-gray-50 dark:bg-[#0d0a08] p-4 rounded-xl border border-dashed border-gray-300 dark:border-[#393028] mb-8">
+                <p className="text-sm text-gray-500">Certificado generado para:</p>
+                <p className="font-bold text-lg dark:text-white">{user?.name}</p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full bg-primary text-black font-bold py-3 rounded-xl hover:bg-[#ff9529] shadow-lg transition-transform hover:scale-[1.02]"
+                >
+                  Volver al Dashboard
+                </button>
+                <button
+                  onClick={() => setShowCongrats(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-white text-sm"
+                >
+                  Cerrar y explorar contenido
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      {showChat && <ChatWidget onClose={() => setShowChat(false)} />}
+    </div >
   );
 };
 

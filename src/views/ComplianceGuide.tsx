@@ -7,34 +7,34 @@ const ComplianceGuide: React.FC = () => {
 
   const translations = {
     es: {
-      title: 'Master the Skies Legally',
-      sub: 'Guía de cumplimiento paso a paso para navegar las regulaciones de drones.',
+      title: 'Domina el Cielo Legalmente',
+      sub: 'Guía de cumplimiento paso a paso para navegar las regulaciones de la ANAC.',
       back: 'Volver al Inicio',
-      official: 'Guía Oficial de Cumplimiento',
+      official: 'Guía Oficial de Cumplimiento (Argentina)',
       stepTitle: 'Tu Camino a la Certificación',
-      step1: 'Registro SISANT',
-      step1Tag: 'Obligatorio > 250g',
-      step2: 'Acceso SARPAS',
-      step2Tag: 'Autorización',
-      step3: 'Seguro RETA',
+      step1: 'Registro en CAD',
+      step1Tag: 'Obligatorio',
+      step2: 'Solicitud de Vuelo',
+      step2Tag: 'EANA',
+      step3: 'Seguro Obligatorio',
       step3Tag: 'Responsabilidad Civil',
-      download: 'Descargar Resumen',
+      download: 'Descargar Normativa',
       cta: '¿Necesitas certificación?',
       ctaLink: 'Ver temario'
     },
     en: {
       title: 'Master the Skies Legally',
-      sub: 'Step-by-step compliance guide to navigate drone regulations.',
+      sub: 'Step-by-step compliance guide to navigate ANAC regulations.',
       back: 'Back to Home',
-      official: 'Official Compliance Guide',
+      official: 'Official Compliance Guide (Argentina)',
       stepTitle: 'Your Path to Certification',
-      step1: 'SISANT Registration',
-      step1Tag: 'Mandatory > 250g',
-      step2: 'SARPAS Access',
-      step2Tag: 'Authorization',
-      step3: 'RETA Insurance',
-      step3Tag: 'Liability',
-      download: 'Download Cheat Sheet',
+      step1: 'CAD Registration',
+      step1Tag: 'Mandatory',
+      step2: 'Flight Request',
+      step2Tag: 'EANA',
+      step3: 'Liability Insurance',
+      step3Tag: 'Required',
+      download: 'Download Regulations',
       cta: 'Need certification?',
       ctaLink: 'View curriculum'
     }
@@ -73,9 +73,9 @@ const ComplianceGuide: React.FC = () => {
             <div className="absolute left-[27px] top-4 bottom-4 w-px bg-border-dark" />
 
             {[
-              { id: '01', title: t.step1, tag: t.step1Tag, icon: 'app_registration', desc: 'Sistema para el registro de aeronaves no tripuladas.' },
-              { id: '02', title: t.step2, tag: t.step2Tag, icon: 'flight_takeoff', desc: 'Utilizado para solicitar acceso al espacio aéreo.' },
-              { id: '03', title: t.step3, tag: t.step3Tag, icon: 'security', desc: 'Seguro obligatorio de responsabilidad civil frente a terceros.' }
+              { id: '01', title: t.step1, tag: t.step1Tag, icon: 'app_registration', desc: 'Registro de vehículos aéreos no tripulados (VANT) en el Casillero Aeronáutico Digital.' },
+              { id: '02', title: t.step2, tag: t.step2Tag, icon: 'flight_takeoff', desc: 'Coordinación con EANA para operaciones en espacio aéreo controlado.' },
+              { id: '03', title: t.step3, tag: t.step3Tag, icon: 'security', desc: 'Póliza de seguro vigente que cubra daños a terceros según normativa vigente.' }
             ].map(step => (
               <div key={step.id} className="relative flex gap-8 group">
                 <div className="relative z-10 shrink-0">

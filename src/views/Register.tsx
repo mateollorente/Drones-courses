@@ -47,14 +47,15 @@ const Register: React.FC = () => {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Register as 'student' by default via db (db.register adds role: 'student')
     const result = db.register(formData);
 
     if (result.success) {
       // Auto login after register
-      login();
+      await login(formData.email, formData.password);
       navigate('/dashboard');
     } else {
       if (result.message === 'email_exists' || result.message === 'dni_exists') {

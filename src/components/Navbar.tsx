@@ -8,7 +8,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ scrollToCourses }) => {
-  const { isLoggedIn, login, logout } = useAuth();
+  const { isLoggedIn, login, logout, user } = useAuth();
   const { language, setLanguage } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -74,29 +74,39 @@ const Navbar: React.FC<NavbarProps> = ({ scrollToCourses }) => {
 
       {isLoggedIn && (
         <>
-          <Link
-            to="/dashboard"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`text-sm font-medium transition-colors ${location.pathname === '/dashboard' ? 'text-primary' : 'text-gray-300 hover:text-primary'}`}
-          >
-            {t.dashboard}
-          </Link>
-          <Link
-            to="/instructor"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`text-sm font-medium transition-colors ${location.pathname === '/instructor' ? 'text-primary' : 'text-gray-300 hover:text-primary'}`}
-          >
-            {t.instructor}
-          </Link>
-          <Link
-            to="/simulator"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`text-sm font-medium transition-colors ${location.pathname === '/simulator' ? 'text-primary' : 'text-gray-300 hover:text-primary'}`}
-          >
-            {t.simulator}
-          </Link>
+          {/* Admin Link */}
+          {user?.role === 'admin' && (
+            <Link
+              to="/admin"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`text-sm font-medium transition-colors ${location.pathname.startsWith('/admin') ? 'text-primary' : 'text-gray-300 hover:text-primary'}`}
+            >
+              Admin Panel
+            </Link>
+          )}
+
+          {/* Student Links (Only show if NOT admin) */}
+          {user?.role !== 'admin' && (
+            <>
+              <Link
+                to="/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-sm font-medium transition-colors ${location.pathname === '/dashboard' ? 'text-primary' : 'text-gray-300 hover:text-primary'}`}
+              >
+                {t.dashboard}
+              </Link>
+              <Link
+                to="/simulator"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-sm font-medium transition-colors ${location.pathname === '/simulator' ? 'text-primary' : 'text-gray-300 hover:text-primary'}`}
+              >
+                {t.simulator}
+              </Link>
+            </>
+          )}
         </>
-      )}
+      )
+      }
     </>
   );
 

@@ -28,13 +28,16 @@ const CourseDetails: React.FC = () => {
         <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl font-light">{t.sub}</p>
         <div className="flex gap-4">
           <Link
-            to="/learn"
+            to="/learn?courseId=course-001"
             className="bg-primary hover:bg-orange-600 text-[#181411] font-bold py-3 px-8 rounded-lg text-lg transition-all shadow-lg inline-flex items-center gap-2"
           >
             {t.start}
             <span className="material-symbols-outlined">arrow_forward</span>
           </Link>
-          <button className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-border-dark py-3 px-6 rounded-lg text-lg font-bold flex items-center gap-2 dark:text-white hover:bg-gray-50 dark:hover:bg-[#322a24] transition-colors">
+          <button
+            onClick={() => alert("Descargando temario en PDF...")}
+            className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-border-dark py-3 px-6 rounded-lg text-lg font-bold flex items-center gap-2 dark:text-white hover:bg-gray-50 dark:hover:bg-[#322a24] transition-colors"
+          >
             <span className="material-symbols-outlined">download</span> {t.syllabus}
           </button>
         </div>
@@ -42,7 +45,7 @@ const CourseDetails: React.FC = () => {
       <div className="aspect-video rounded-2xl overflow-hidden border border-border-dark bg-gray-800 relative group">
         <img src="https://images.unsplash.com/photo-1579829366248-204fe8413f31?auto=format&fit=crop&q=80&w=1600" className="w-full h-full object-cover opacity-80" alt="Course Cover" />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-          <Link to="/learn" className="h-20 w-20 bg-white/20 backdrop-blur-md border border-white/50 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform">
+          <Link to="/learn?courseId=course-001" className="h-20 w-20 bg-white/20 backdrop-blur-md border border-white/50 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform">
             <span className="material-symbols-outlined text-4xl">play_arrow</span>
           </Link>
         </div>

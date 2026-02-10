@@ -41,13 +41,17 @@ const Login: React.FC = () => {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = db.login(formData.email, formData.password);
+    // Use the login function from context which checks DB
+    const user = await login(formData.email, formData.password);
 
-    if (result.success) {
-      login();
-      navigate('/dashboard');
+    if (user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setError(t.error);
     }
@@ -132,6 +136,18 @@ const Login: React.FC = () => {
           <p className="text-center text-sm text-gray-500">
             {t.register} <Link to="/register" className="font-bold text-primary hover:underline">{t.registerLink}</Link>
           </p>
+
+          <button
+            onClick={() => {
+              if (window.confirm('⚠️ ¿RESET DE FÁBRICA? Se borrarán todos los datos y se restaurarán los usuarios por defecto (Admin y Joako).')) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            className="mt-8 w-full text-xs text-gray-400 hover:text-red-500 transition-colors border-t border-gray-100 pt-4"
+          >
+            [DEV] Reset Database & Reload
+          </button>
         </div>
       </div>
     </div>

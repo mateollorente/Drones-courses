@@ -12,12 +12,30 @@ import Login from './views/Login';
 import CourseLearning from './views/CourseLearning';
 import { useAuth } from './context/AuthContext';
 
+import AdminDashboard from './views/admin/AdminDashboard';
+import CourseEditor from './views/admin/CourseEditor';
+import AdminMessages from './views/admin/AdminMessages';
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn } = useAuth();
 
   if (!isLoggedIn) {
     return <Navigate to="/" replace />;
   }
+  return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isLoggedIn, isAdmin } = useAuth();
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -28,6 +46,12 @@ const App: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/courses/new" element={<AdminRoute><CourseEditor /></AdminRoute>} />
+        <Route path="/admin/courses/edit/:id" element={<AdminRoute><CourseEditor /></AdminRoute>} />
+        <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
 
         <Route element={<Layout />}>
           <Route

@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
+import { db, Course } from '../utils/db';
+
 // --- Componente para animar elementos al hacer scroll (Reveal on Scroll) ---
 const FadeInSection: React.FC<{ children: React.ReactNode; delay?: string }> = ({ children, delay = '0ms' }) => {
   const [isVisible, setVisible] = useState(false);
@@ -41,6 +43,12 @@ const LandingPage: React.FC = () => {
   const coursesRef = useRef<HTMLElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    setCourses(db.getCourses().filter(c => c.published));
+  }, []);
+
   const [isPaused, setIsPaused] = useState(false);
 
   // --- Lógica del Carrusel Automático ---
@@ -170,13 +178,8 @@ const LandingPage: React.FC = () => {
 
   const t = translations[language];
 
-  const courseList = [
-    { title: t.course1, img: 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800' },
-    { title: t.course2, img: 'https://images.unsplash.com/photo-1506947411487-a56738267384?auto=format&fit=crop&q=80&w=800' },
-    { title: t.course3, img: 'https://images.unsplash.com/photo-1579829366248-204fe8413f31?auto=format&fit=crop&q=80&w=800' },
-    { title: t.course4, img: 'https://images.unsplash.com/photo-1625246333195-58197bd47d19?auto=format&fit=crop&q=80&w=800' },
-    { title: t.course5, img: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=800' },
-  ];
+
+
 
   const scrollToCourses = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -202,14 +205,20 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark">
-      <Navbar scrollToCourses={scrollToCourses} />
-
-      {/* Floating WhatsApp Mock */}
-      <div className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg cursor-pointer hover:scale-110 transition-transform group animate-bounce">
+      {/* Floating WhatsApp Mock - Now Functional */}
+      <a
+        href="https://wa.me/5491112345678"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg cursor-pointer hover:scale-110 transition-transform group animate-bounce"
+        title="Chat on WhatsApp"
+      >
         <span className="material-symbols-outlined text-3xl">chat</span>
-      </div>
+      </a>
 
       <main className="flex-1 w-full space-y-24 py-12 overflow-hidden">
+        {/* ... Hero Section unchanged ... */}
+
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInSection>
@@ -314,23 +323,28 @@ const LandingPage: React.FC = () => {
                 className="flex overflow-x-auto pb-8 gap-6 snap-x snap-mandatory scrollbar-hide pr-8 items-center"
                 style={{ scrollBehavior: 'smooth', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {courseList.map((c, i) => (
-                  <div key={i} className="min-w-[320px] md:min-w-[380px] snap-center group overflow-hidden rounded-2xl border border-[#393028] bg-surface-dark transition-all hover:border-primary/50 flex-shrink-0 relative transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10">
-                    <div className="relative h-56 bg-gray-800 mb-0 overflow-hidden">
-                      <img src={c.img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={c.title} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-surface-dark via-transparent to-transparent opacity-60"></div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-white font-bold text-2xl mb-2">{c.title}</h3>
-                      <div className="flex justify-between items-center mt-4 pt-4 border-t border-[#393028]">
-                        <span className="text-white font-bold text-lg">{t.price}</span>
-                        <Link to="/course-details" className="text-primary text-sm font-bold hover:text-white transition-colors flex items-center gap-1">
-                          {t.details} <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                        </Link>
+                {courses.length > 0 ? (
+                  courses.map((course) => (
+                    <div key={course.id} className="min-w-[320px] md:min-w-[380px] snap-center group overflow-hidden rounded-2xl border border-[#393028] bg-surface-dark transition-all hover:border-primary/50 flex-shrink-0 relative transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10">
+                      <div className="relative h-56 bg-gray-800 mb-0 overflow-hidden">
+                        <img src={course.thumbnail || "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=400"} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={course.title} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-surface-dark via-transparent to-transparent opacity-60"></div>
+                      </div>
+                      <div className="p-6">
+                        <h3 className="text-white font-bold text-2xl mb-2 line-clamp-1">{course.title}</h3>
+                        <p className="text-gray-400 text-sm mb-4 line-clamp-2">{course.description}</p>
+                        <div className="flex justify-between items-center mt-4 pt-4 border-t border-[#393028]">
+                          <span className="text-white font-bold text-lg">{course.price || "GRATIS"}</span>
+                          <button onClick={() => handleRestrictedAccess(`/learn?courseId=${course.id}`)} className="text-primary text-sm font-bold hover:text-white transition-colors flex items-center gap-1">
+                            {t.details} <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="w-full text-center text-gray-500 py-10">No hay cursos publicados disponibles en este momento.</div>
+                )}
                 {/* Spacer for right padding to allow last item to be centered if needed */}
                 <div className="w-[10vw] shrink-0" />
               </div>
@@ -354,12 +368,12 @@ const LandingPage: React.FC = () => {
                   {t.footerDesc}
                 </p>
                 <div className="flex gap-4 pt-2">
-                  <a href="#" className="h-10 w-10 rounded-full bg-[#1e1a16] border border-[#393028] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black hover:border-primary transition-all">
+                  <button onClick={() => alert("Contact: support@aerovision.com")} className="h-10 w-10 rounded-full bg-[#1e1a16] border border-[#393028] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black hover:border-primary transition-all">
                     <span className="material-symbols-outlined text-sm">mail</span>
-                  </a>
-                  <a href="#" className="h-10 w-10 rounded-full bg-[#1e1a16] border border-[#393028] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black hover:border-primary transition-all">
+                  </button>
+                  <button onClick={() => window.open('https://aerovision.com', '_blank')} className="h-10 w-10 rounded-full bg-[#1e1a16] border border-[#393028] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black hover:border-primary transition-all">
                     <span className="material-symbols-outlined text-sm">public</span>
-                  </a>
+                  </button>
                 </div>
               </div>
 
@@ -367,9 +381,9 @@ const LandingPage: React.FC = () => {
               <div>
                 <h3 className="text-lg font-bold mb-6">{t.company}</h3>
                 <ul className="space-y-4 text-gray-400 text-sm">
-                  <li><a href="#" className="hover:text-primary transition-colors">{t.about}</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">{t.careers}</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">{t.blog}</a></li>
+                  <li><button onClick={() => alert("Información sobre la empresa...")} className="hover:text-primary transition-colors text-left">{t.about}</button></li>
+                  <li><button onClick={() => alert("No hay vacantes disponibles en este momento.")} className="hover:text-primary transition-colors text-left">{t.careers}</button></li>
+                  <li><button onClick={() => alert("Próximamente en nuestro blog...")} className="hover:text-primary transition-colors text-left">{t.blog}</button></li>
                 </ul>
               </div>
 
@@ -377,9 +391,9 @@ const LandingPage: React.FC = () => {
               <div>
                 <h3 className="text-lg font-bold mb-6">{t.legal}</h3>
                 <ul className="space-y-4 text-gray-400 text-sm">
-                  <li><a href="#" className="hover:text-primary transition-colors">{t.terms}</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">{t.privacy}</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">{t.cookies}</a></li>
+                  <li><button onClick={() => alert("Aquí irían los Términos de Uso.")} className="hover:text-primary transition-colors text-left">{t.terms}</button></li>
+                  <li><button onClick={() => alert("Aquí iría la Política de Privacidad.")} className="hover:text-primary transition-colors text-left">{t.privacy}</button></li>
+                  <li><button onClick={() => alert("Aquí iría la Política de Cookies.")} className="hover:text-primary transition-colors text-left">{t.cookies}</button></li>
                 </ul>
               </div>
 
@@ -389,18 +403,18 @@ const LandingPage: React.FC = () => {
                 <ul className="space-y-4 text-gray-400 text-sm">
                   <li className="flex items-start gap-3">
                     <span className="material-symbols-outlined text-primary text-lg">location_on</span>
-                    <span>Aeropuerto de Cuatro Vientos, Madrid, España</span>
+                    <span>Aeroparque Jorge Newbery, Buenos Aires, Argentina</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary text-lg">call</span>
-                    <span>+34 912 345 678</span>
+                    <span>+54 9 11 1234 5678</span>
                   </li>
                 </ul>
               </div>
             </div>
 
             <div className="border-t border-[#393028] pt-8 text-center text-gray-600 text-sm">
-              <p>© 2024 AeroVision. {t.rights}</p>
+              <p>© 2026 AeroVision. {t.rights}</p>
             </div>
           </div>
         </FadeInSection>
