@@ -269,6 +269,28 @@ export const db = {
     return users;
   },
 
+  updateUser: (email: string, updates: Partial<User>): boolean => {
+    const users = db.getUsers();
+    const index = users.findIndex(u => u.email === email);
+
+    if (index >= 0) {
+      users[index] = { ...users[index], ...updates };
+      localStorage.setItem(DB_USERS_KEY, JSON.stringify(users));
+
+      // Update session if it's the current user
+      const session = localStorage.getItem('aerovision_user_session');
+      if (session) {
+        const sessionUser = JSON.parse(session);
+        if (sessionUser.email === email) {
+          localStorage.setItem('aerovision_user_session', JSON.stringify(users[index]));
+        }
+      }
+      notifyListeners();
+      return true;
+    }
+    return false;
+  },
+
   register: (user: Omit<User, 'role'>): { success: boolean; message?: string } => {
     const users = db.getUsers();
 

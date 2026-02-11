@@ -15,6 +15,8 @@ import { useAuth } from './context/AuthContext';
 import AdminDashboard from './views/admin/AdminDashboard';
 import CourseEditor from './views/admin/CourseEditor';
 import AdminMessages from './views/admin/AdminMessages';
+import AdminStudents from './views/admin/AdminStudents';
+import Profile from './views/Profile';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn } = useAuth();
@@ -52,6 +54,7 @@ const App: React.FC = () => {
         <Route path="/admin/courses/new" element={<AdminRoute><CourseEditor /></AdminRoute>} />
         <Route path="/admin/courses/edit/:id" element={<AdminRoute><CourseEditor /></AdminRoute>} />
         <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+        <Route path="/admin/students" element={<AdminRoute><AdminStudents /></AdminRoute>} />
 
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
@@ -60,6 +63,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

@@ -157,12 +157,21 @@ const Navbar: React.FC<NavbarProps> = ({ scrollToCourses }) => {
 
             <div className="flex gap-3">
               {isLoggedIn ? (
-                <button
-                  onClick={() => handleAuthAction('logout')}
-                  className="flex items-center justify-center rounded-lg h-9 px-4 border border-[#393028] bg-transparent text-white text-sm font-bold hover:bg-[#393028] transition-colors"
-                >
-                  {t.logout}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="flex items-center justify-center rounded-lg h-9 px-4 border border-[#393028] bg-transparent text-white text-sm font-bold hover:bg-[#393028] transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg mr-1">person</span>
+                    Perfil
+                  </button>
+                  <button
+                    onClick={() => handleAuthAction('logout')}
+                    className="flex items-center justify-center rounded-lg h-9 px-4 border border-[#393028] bg-transparent text-white text-sm font-bold hover:bg-[#393028] transition-colors"
+                  >
+                    {t.logout}
+                  </button>
+                </div>
               ) : (
                 <>
                   <button
@@ -213,12 +222,20 @@ const Navbar: React.FC<NavbarProps> = ({ scrollToCourses }) => {
 
           <div className="flex flex-col gap-3 mt-auto">
             {isLoggedIn ? (
-              <button
-                onClick={() => handleAuthAction('logout')}
-                className="w-full flex items-center justify-center rounded-xl h-12 border border-[#393028] bg-[#221910] text-white font-bold"
-              >
-                {t.logout}
-              </button>
+              <>
+                <button
+                  onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }}
+                  className="w-full flex items-center justify-center rounded-xl h-12 border border-[#393028] bg-[#221910] text-white font-bold"
+                >
+                  Mi Perfil
+                </button>
+                <button
+                  onClick={() => handleAuthAction('logout')}
+                  className="w-full flex items-center justify-center rounded-xl h-12 border border-[#393028] bg-[#221910] text-white font-bold"
+                >
+                  {t.logout}
+                </button>
+              </>
             ) : (
               <>
                 <button

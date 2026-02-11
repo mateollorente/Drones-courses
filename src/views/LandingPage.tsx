@@ -206,15 +206,17 @@ const LandingPage: React.FC = () => {
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark">
       {/* Floating WhatsApp Mock - Now Functional */}
-      <a
-        href="https://wa.me/5491112345678"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg cursor-pointer hover:scale-110 transition-transform group animate-bounce"
-        title="Chat on WhatsApp"
-      >
-        <span className="material-symbols-outlined text-3xl">chat</span>
-      </a>
+      {!isLoggedIn && (
+        <a
+          href="https://wa.me/5491112345678"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg cursor-pointer hover:scale-110 transition-transform group animate-bounce"
+          title="Chat on WhatsApp"
+        >
+          <span className="material-symbols-outlined text-3xl">chat</span>
+        </a>
+      )}
 
       <main className="flex-1 w-full space-y-24 py-12 overflow-hidden">
         {/* ... Hero Section unchanged ... */}

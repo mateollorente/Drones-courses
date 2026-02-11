@@ -32,6 +32,10 @@ const AdminDashboard: React.FC = () => {
                         <span className="material-symbols-outlined">dashboard</span>
                         Dashboard
                     </Link>
+                    <Link to="/admin/students" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined">group</span>
+                        Estudiantes
+                    </Link>
                     <Link to="/admin/messages" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                         <span className="material-symbols-outlined">chat</span>
                         Mensajes
