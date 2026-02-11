@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db, User, Course } from '../../utils/db';
+import { db, User, Course, UserProgress } from '../../utils/db'; // Import UserProgress
 import { useAuth } from '../../context/AuthContext';
 
 const AdminStudents: React.FC = () => {
@@ -8,19 +8,47 @@ const AdminStudents: React.FC = () => {
     const [students, setStudents] = useState<User[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
     const [studentCourses, setStudentCourses] = useState<Course[]>([]);
+    const [progressMap, setProgressMap] = useState<Record<string, UserProgress>>({});
 
     useEffect(() => {
-        const allUsers = db.getUsers();
-        // Ensure student role
-        const studentList = allUsers.filter(u => u.role === 'student');
-        setStudents(studentList);
+        const fetchUsers = async () => {
+            const allUsers = await db.getUsers();
+            // Ensure student role
+            const studentList = allUsers.filter(u => u.role === 'student');
+            setStudents(studentList);
+        };
+        fetchUsers();
     }, []);
 
-    const handleStudentClick = (student: User) => {
+    const handleStudentClick = async (student: User) => {
         setSelectedStudent(student);
+        setStudentCourses([]);
+        setProgressMap({});
+
         if (student.enrolledCourses && student.enrolledCourses.length > 0) {
-            const courses = student.enrolledCourses.map(id => db.getCourseById(id)).filter((c): c is Course => !!c);
+            const coursesPromises = student.enrolledCourses.map(id => db.getCourseById(id));
+            const coursesResults = await Promise.all(coursesPromises);
+            const courses = coursesResults.filter((c): c is Course => !!c);
             setStudentCourses(courses);
+
+            // Fetch progress for each course
+            const newProgressMap: Record<string, UserProgress> = {};
+            // We can do this in parallel too
+            const progressPromises = courses.map(async (course) => {
+                const prog = await db.getProgress(student.email, course.id);
+                if (prog) {
+                    return { courseId: course.id, prog };
+                }
+                return null;
+            });
+
+            const progressResults = await Promise.all(progressPromises);
+            progressResults.forEach(res => {
+                if (res) {
+                    newProgressMap[res.courseId] = res.prog;
+                }
+            });
+            setProgressMap(newProgressMap);
         } else {
             setStudentCourses([]);
         }
@@ -29,6 +57,7 @@ const AdminStudents: React.FC = () => {
     const closeModal = () => {
         setSelectedStudent(null);
         setStudentCourses([]);
+        setProgressMap({});
     };
 
     return (
@@ -138,7 +167,7 @@ const AdminStudents: React.FC = () => {
                             {studentCourses.length > 0 ? (
                                 <div className="space-y-4">
                                     {studentCourses.map(course => {
-                                        const progress = db.getProgress(selectedStudent.email, course.id);
+                                        const progress = progressMap[course.id];
                                         const completed = progress?.completedLessons?.length || 0;
                                         // Calculate total lessons safely
                                         const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);

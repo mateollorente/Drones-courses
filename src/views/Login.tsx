@@ -144,10 +144,12 @@ const Login: React.FC = () => {
                 window.location.reload();
               }
             }}
-            className="mt-8 w-full text-xs text-gray-400 hover:text-red-500 transition-colors border-t border-gray-100 pt-4"
+            className="mt-8 w-full text-xs text-gray-400 hover:text-red-500 transition-colors border-t border-gray-100 pt-4 cursor-pointer"
           >
             [DEV] Reset Database & Reload
           </button>
+
+
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { db, Course } from '../utils/db';
+import { db, Course, UserProgress } from '../utils/db'; // Import UserProgress
 import PaymentModal from '../components/PaymentModal';
 import RequirementsModal from '../components/RequirementsModal';
 
@@ -24,14 +24,33 @@ const Dashboard: React.FC = () => {
   const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
   const [courseToBuy, setCourseToBuy] = useState<Course | null>(null);
   const [showRequirements, setShowRequirements] = useState(false);
+  const [progressMap, setProgressMap] = useState<Record<string, UserProgress>>({});
 
-  const refreshCourses = () => {
-    const allCourses = db.getCourses().filter(c => c.published);
+  const refreshCourses = async () => {
+    const allCourses = await db.getCourses();
+    const publishedCourses = allCourses.filter(c => c.published);
+
     if (user) {
-      const enrolled = allCourses.filter(c => db.isEnrolled(user.email, c.id));
-      const available = allCourses.filter(c => !db.isEnrolled(user.email, c.id));
+      // Check enrollment for each course
+      const enrollmentPromises = publishedCourses.map(async c => {
+        const enrolled = await db.isEnrolled(user.email, c.id);
+        return { course: c, enrolled };
+      });
+      const results = await Promise.all(enrollmentPromises);
+
+      const enrolled = results.filter(r => r.enrolled).map(r => r.course);
+      const available = results.filter(r => !r.enrolled).map(r => r.course);
+
       setEnrolledCourses(enrolled);
       setAvailableCourses(available);
+
+      // Fetch progress for enrolled
+      const progMap: Record<string, UserProgress> = {};
+      await Promise.all(enrolled.map(async c => {
+        const p = await db.getProgress(user.email, c.id);
+        if (p) progMap[c.id] = p;
+      }));
+      setProgressMap(progMap);
     }
   };
 
@@ -39,9 +58,9 @@ const Dashboard: React.FC = () => {
     refreshCourses();
   }, [user]);
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (user && courseToBuy) {
-      const success = db.enrollUser(user.email, courseToBuy.id);
+      const success = await db.enrollUser(user.email, courseToBuy.id);
       if (success) {
         refreshCourses();
         setCourseToBuy(null);
@@ -123,7 +142,7 @@ const Dashboard: React.FC = () => {
             {enrolledCourses.length > 0 ? (
               enrolledCourses.map(course => {
                 // Calculate progress
-                const progress = db.getProgress(user?.email || '', course.id);
+                const progress = progressMap[course.id]; // Use Map
                 let progressPercent = 0;
                 let lastLessonTitle = "Sin empezar";
 

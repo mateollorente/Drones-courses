@@ -26,9 +26,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const login = async (email?: string, password?: string): Promise<User | null> => {
-        // If credentials provided, verify against DB (simulated async)
+        // If credentials provided, verify against DB
         if (email && password) {
-            const result = db.login(email, password);
+            const result = await db.login(email, password);
             if (result.success && result.user) {
                 setUser(result.user);
                 localStorage.setItem('aerovision_user_session', JSON.stringify(result.user));
@@ -46,7 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('aerovision_user_session', JSON.stringify(u));
     };
 
-    const logout = () => {
+    const logout = async () => {
+        await db.logout();
         setUser(null);
         localStorage.removeItem('aerovision_user_session');
     };

@@ -23,28 +23,32 @@ const CourseLearning: React.FC = () => {
   const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
-    if (courseId && user) {
-      // Check enrollment first
-      if (!db.isEnrolled(user.email, courseId)) {
-        navigate('/dashboard');
-        return;
-      }
+    const fetchCourseData = async () => {
+      if (courseId && user) {
+        // Check enrollment first
+        const isEnrolled = await db.isEnrolled(user.email, courseId);
+        if (!isEnrolled) {
+          navigate('/dashboard');
+          return;
+        }
 
-      const foundCourse = db.getCourseById(courseId);
-      if (foundCourse) {
-        setCourse(foundCourse);
-        // Restore progress
-        const progress = db.getProgress(user.email, courseId);
-        if (progress) {
-          setCurrentModuleIdx(progress.currentModuleIdx);
-          setCurrentLessonIdx(progress.currentLessonIdx);
-          setCompletedLessons(progress.completedLessons || []);
+        const foundCourse = await db.getCourseById(courseId);
+        if (foundCourse) {
+          setCourse(foundCourse);
+          // Restore progress
+          const progress = await db.getProgress(user.email, courseId);
+          if (progress) {
+            setCurrentModuleIdx(progress.currentModuleIdx);
+            setCurrentLessonIdx(progress.currentLessonIdx);
+            setCompletedLessons(progress.completedLessons || []);
+          }
         }
       }
-    }
+    };
+    fetchCourseData();
   }, [courseId, user, navigate]);
 
-  const saveProgress = (modIdx: number, lessIdx: number, newCompleted?: string[]) => {
+  const saveProgress = async (modIdx: number, lessIdx: number, newCompleted?: string[]) => {
     if (user && courseId) {
       const finalCompleted = newCompleted || completedLessons;
       const newProgress: UserProgress = {
@@ -54,7 +58,7 @@ const CourseLearning: React.FC = () => {
         completedLessons: finalCompleted,
         lastAccessed: Date.now()
       };
-      db.saveProgress(user.email, newProgress);
+      await db.saveProgress(user.email, newProgress);
     }
   };
 
@@ -92,7 +96,7 @@ const CourseLearning: React.FC = () => {
 
   if (!currentLesson) return <div>Error: Lección no encontrada</div>;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     let currentCompletedLessons = completedLessons;
 
     // Mark current as completed before moving
@@ -105,33 +109,33 @@ const CourseLearning: React.FC = () => {
 
     if (currentLessonIdx < currentModule.lessons.length - 1) {
       setCurrentLessonIdx(currentLessonIdx + 1);
-      saveProgress(currentModuleIdx, currentLessonIdx + 1, currentCompletedLessons);
+      await saveProgress(currentModuleIdx, currentLessonIdx + 1, currentCompletedLessons);
     } else if (currentModuleIdx < course.modules.length - 1) {
       setCurrentModuleIdx(currentModuleIdx + 1);
       setCurrentLessonIdx(0);
-      saveProgress(currentModuleIdx + 1, 0, currentCompletedLessons);
+      await saveProgress(currentModuleIdx + 1, 0, currentCompletedLessons);
     } else {
       // Last lesson of last module
-      saveProgress(currentModuleIdx, currentLessonIdx, currentCompletedLessons);
+      await saveProgress(currentModuleIdx, currentLessonIdx, currentCompletedLessons);
     }
   };
 
-  const handlePrev = () => {
+  const handlePrev = async () => {
     setQuizSelected(null);
     setQuizResult(null);
     if (currentLessonIdx > 0) {
       setCurrentLessonIdx(currentLessonIdx - 1);
-      saveProgress(currentModuleIdx, currentLessonIdx - 1);
+      await saveProgress(currentModuleIdx, currentLessonIdx - 1);
     } else if (currentModuleIdx > 0) {
       setCurrentModuleIdx(currentModuleIdx - 1);
       const prevModLessons = course.modules[currentModuleIdx - 1].lessons;
       const newLessonIdx = prevModLessons.length - 1;
       setCurrentLessonIdx(newLessonIdx);
-      saveProgress(currentModuleIdx - 1, newLessonIdx);
+      await saveProgress(currentModuleIdx - 1, newLessonIdx);
     }
   };
 
-  const checkAnswer = () => {
+  const checkAnswer = async () => {
     if (!currentLesson.quizData) return;
 
     const selectedOption = currentLesson.quizData.options.find(o => o.id === quizSelected);
@@ -139,7 +143,7 @@ const CourseLearning: React.FC = () => {
     if (selectedOption?.isCorrect) {
       setQuizResult('correct');
       const newCompleted = markLessonAsCompleted(currentLesson.id);
-      saveProgress(currentModuleIdx, currentLessonIdx, newCompleted);
+      await saveProgress(currentModuleIdx, currentLessonIdx, newCompleted);
     } else {
       setQuizResult('incorrect');
     }

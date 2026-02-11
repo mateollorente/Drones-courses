@@ -12,7 +12,7 @@ const Profile: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const handlePasswordChange = (e: React.FormEvent) => {
+    const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage(null);
 
@@ -35,7 +35,7 @@ const Profile: React.FC = () => {
         }
 
         // Update password
-        const success = db.updateUser(user.email, { password: newPassword });
+        const success = await db.updateUser(user.email, { password: newPassword });
         if (success) {
             setMessage({ type: 'success', text: language === 'es' ? 'Contraseña actualizada correctamente' : 'Password updated successfully' });
             setCurrentPassword('');

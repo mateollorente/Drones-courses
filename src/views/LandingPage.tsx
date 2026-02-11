@@ -46,7 +46,11 @@ const LandingPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
-    setCourses(db.getCourses().filter(c => c.published));
+    const fetchCourses = async () => {
+      const allCourses = await db.getCourses();
+      setCourses(allCourses.filter(c => c.published));
+    };
+    fetchCourses();
   }, []);
 
   const [isPaused, setIsPaused] = useState(false);

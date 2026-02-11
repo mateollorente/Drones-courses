@@ -13,12 +13,13 @@ const UnreadBadge = () => {
 
   React.useEffect(() => {
     if (!user) return;
-    const check = () => {
-      const msgs = db.getMessages(user.email, 'admin@aerovision.com');
+    const check = async () => {
+      const msgs = await db.getMessages(user.email, 'admin@aerovision.com');
       const unread = msgs.filter(m => m.fromEmail === 'admin@aerovision.com' && !m.read).length;
       setCount(unread);
     };
     check();
+    // Subscribe returns a cleanup function
     const unsubscribe = db.subscribe(check);
     return () => unsubscribe();
   }, [user]);

@@ -10,12 +10,12 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const adminEmail = 'admin@aerovision.com';
 
     // Load messages
-    const loadMessages = () => {
+    const loadMessages = async () => {
         if (!user) return;
-        const chatHistory = db.getMessages(user.email, adminEmail);
+        const chatHistory = await db.getMessages(user.email, adminEmail);
         setMessages(chatHistory);
         // Mark admin messages as read since we are viewing them
-        db.markMessagesAsRead(adminEmail, user.email);
+        await db.markMessagesAsRead(adminEmail, user.email);
     };
 
     useEffect(() => {
@@ -35,11 +35,11 @@ const ChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = (e: React.FormEvent) => {
+    const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() || !user) return;
 
-        db.sendMessage(user.email, adminEmail, input);
+        await db.sendMessage(user.email, adminEmail, input);
         setInput('');
         loadMessages(); // Refresh immediately
     };

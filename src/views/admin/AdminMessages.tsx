@@ -13,26 +13,27 @@ const AdminMessages: React.FC = () => {
     const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
 
-    const refreshConversations = () => {
-        setConversations(db.getAllConversations());
+    const refreshConversations = async () => {
+        const convos = await db.getAllConversations();
+        setConversations(convos);
     };
 
-    const loadChat = (email: string) => {
+    const loadChat = async (email: string) => {
         if (!user) return;
         setSelectedEmail(email);
-        const chat = db.getMessages(user.email, email);
+        const chat = await db.getMessages(user.email, email);
         setMessages(chat);
-        db.markMessagesAsRead(email, user.email);
+        await db.markMessagesAsRead(email, user.email);
         refreshConversations();
     };
 
     useEffect(() => {
         refreshConversations();
-        const interval = setInterval(() => {
+        const interval = setInterval(async () => {
             refreshConversations();
             if (selectedEmail && user) {
                 // Fetch messages directly to ensure we get the latest
-                const chat = db.getMessages(user.email, selectedEmail);
+                const chat = await db.getMessages(user.email, selectedEmail);
                 // Only update state if length changed to avoid re-renders (simple check)
                 setMessages(prev => {
                     if (prev.length !== chat.length) return chat;
@@ -44,9 +45,9 @@ const AdminMessages: React.FC = () => {
         return () => clearInterval(interval);
     }, [selectedEmail, user]);
 
-    const handleSend = (text: string) => {
+    const handleSend = async (text: string) => {
         if (!selectedEmail || !user) return;
-        db.sendMessage(user.email, selectedEmail, text);
+        await db.sendMessage(user.email, selectedEmail, text);
         loadChat(selectedEmail);
     };
 

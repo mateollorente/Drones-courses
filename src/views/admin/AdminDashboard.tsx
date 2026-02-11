@@ -6,16 +6,24 @@ import { useAuth } from '../../context/AuthContext';
 const AdminDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const [courses, setCourses] = useState<Course[]>([]);
+    const [studentCount, setStudentCount] = useState(0);
     const navigate = useNavigate();
 
+    const fetchData = async () => {
+        const c = await db.getCourses();
+        setCourses(c);
+        const users = await db.getUsers();
+        setStudentCount(users.filter(u => u.role === 'student').length);
+    };
+
     useEffect(() => {
-        setCourses(db.getCourses());
+        fetchData();
     }, []);
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm('¿Estás seguro de que quieres eliminar este curso?')) {
-            db.deleteCourse(id);
-            setCourses(db.getCourses());
+            await db.deleteCourse(id);
+            fetchData();
         }
     };
 
@@ -76,7 +84,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="bg-surface-dark border border-[#393028] p-6 rounded-2xl">
                         <h3 className="text-gray-400 text-sm uppercase font-bold text-xs mb-2">Total Alumnos</h3>
-                        <p className="text-4xl font-black text-white">{db.getUsers().filter(u => u.role === 'student').length}</p>
+                        <p className="text-4xl font-black text-white">{studentCount}</p>
                     </div>
                     <div className="bg-surface-dark border border-[#393028] p-6 rounded-2xl">
                         <h3 className="text-gray-400 text-sm uppercase font-bold text-xs mb-2">Cursos Publicados</h3>
@@ -115,5 +123,4 @@ const AdminDashboard: React.FC = () => {
         </div>
     );
 };
-
 export default AdminDashboard;

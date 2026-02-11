@@ -9,6 +9,7 @@ const Register: React.FC = () => {
   const { login } = useAuth();
   const { language } = useLanguage();
   const [formData, setFormData] = useState({ name: '', email: '', password: '', dni: '' });
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
 
   const translations = {
@@ -51,17 +52,21 @@ const Register: React.FC = () => {
     e.preventDefault();
 
     // Register as 'student' by default via db (db.register adds role: 'student')
-    const result = db.register(formData);
+    const result = await db.register({ ...formData, role: isAdmin ? 'admin' : 'student' } as any);
 
     if (result.success) {
       // Auto login after register
       await login(formData.email, formData.password);
-      navigate('/dashboard');
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       if (result.message === 'email_exists' || result.message === 'dni_exists') {
         setError(t.errorExists);
       } else {
-        setError('Error desconocido');
+        setError('Error: ' + (result.message || 'Desconocido'));
       }
     }
   };
@@ -146,6 +151,7 @@ const Register: React.FC = () => {
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-1">{t.password}</label>
                 <input
@@ -158,6 +164,19 @@ const Register: React.FC = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isAdmin"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+                className="rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="isAdmin" className="text-sm font-medium text-slate-700 dark:text-gray-300 select-none">
+                Registrar como Administrador (Solo para pruebas)
+              </label>
             </div>
 
             <button
